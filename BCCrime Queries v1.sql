@@ -21,6 +21,13 @@ WHERE HUNDRED_BLOCK IS NULL
 	OR X IS NULL 
 	OR Y IS NULL
 
+-- PRIVACY PROTECTION, X and Y coordinates are 0
+select *
+from dbo.crimedata_csv_all_years$
+where X = 0 or Y = 0
+
+
+-- OVERVIEW
 -- Will be ignoring rows with NULL in any attributes
 -- Total number of incidents for each Neighbourhood
 SELECT 
@@ -30,7 +37,6 @@ FROM dbo.crimedata_csv_all_years$
 GROUP BY NEIGHBOURHOOD
 HAVING NEIGHBOURHOOD IS NOT NULL
 ORDER BY Total_Crime_by_Neighbourhood DESC
-
 
 -- The crime frequencies by type in Vancouver
 SELECT 
@@ -96,7 +102,8 @@ GROUP BY NEIGHBOURHOOD, TYPE, YEAR
 HAVING NEIGHBOURHOOD IS NOT NULL
 ORDER BY NEIGHBOURHOOD, TYPE, YEAR
 
--- Derive Day of week from Full Date
+-- PRIOR POST COVID19
+-- Full date format
 SELECT  
 	INCIDENT_NUMBER,
 	DATENAME(WEEKDAY, CAST(CONCAT(YEAR,'-', RIGHT(CONCAT('0',MONTH), 2),'-',RIGHT(CONCAT('0',DAY), 2), ' ', RIGHT(CONCAT('0',HOUR), 2),':', RIGHT(CONCAT('0',MINUTE),2)) AS datetime)) AS Crime_Day
@@ -104,9 +111,21 @@ SELECT
 FROM dbo.crimedata_csv_all_years$
 ORDER BY INCIDENT_NUMBER
 
--- Crime Day vs Number of Crimes reported
-SELECT
-	NEIGHBOURHOOD,
-	DATENAME(WEEKDAY, CAST(CONCAT(YEAR,'-', RIGHT(CONCAT('0',MONTH), 2),'-',RIGHT(CONCAT('0',DAY), 2), ' ', RIGHT(CONCAT('0',HOUR), 2),':', RIGHT(CONCAT('0',MINUTE),2)) AS datetime)) AS Crime_Day
-FROM dbo.crimedata_csv_all_years$
+-- Add column: full date, datetime form and add data fo YEAR MONTH DAY HOUR and MINUTE by concat
+alter table dbo.crimedata_csv_all_years$ add FULL_DATE datetime
 
+update dbo.crimedata_csv_all_years$
+set FULL_DATE = CAST(CONCAT(YEAR,'-', RIGHT(CONCAT('0',MONTH), 2),'-',RIGHT(CONCAT('0',DAY), 2), ' ', RIGHT(CONCAT('0',HOUR), 2),':', RIGHT(CONCAT('0',MINUTE),2)) AS datetime)
+
+
+-- Prior Covid
+select *
+from dbo.crimedata_csv_all_years$
+where FULL_DATE <= '2020-03-17'
+order by FULL_DATE DESC
+
+-- Post Covid
+select *
+from dbo.crimedata_csv_all_years$
+where FULL_DATE > '2020-03-17'
+order by FULL_DATE DESC
