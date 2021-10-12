@@ -223,9 +223,39 @@ from
 group by TYPE, YEAR, MONTH
 order by TYPE, YEAR, MONTH
 
+-- Check the ratio of the Incident by neighbourhood before and after the lockdown
+select 
+	NEIGHBOURHOOD,
+	count(NEIGHBOURHOOD) as Number_of_Reports,
+	format(cast(count(NEIGHBOURHOOD) as float)/44566, 'P') as Ratio
+from 
+	(SELECT *
+	FROM dbo.crimedata_csv_all_years$
+	WHERE HUNDRED_BLOCK IS NOT NULL AND NEIGHBOURHOOD IS NOT NULL AND X IS NOT NULL AND Y IS NOT NULL AND FULL_DATE >= '2020-03-18') nonull
+group by NEIGHBOURHOOD
+order by Number_of_Reports desc
+
+select 
+	NEIGHBOURHOOD,
+	count(NEIGHBOURHOOD) as Number_of_Reports,
+	format(cast(count(NEIGHBOURHOOD) as float)/755250, 'P') as Ratio
+from 
+	(SELECT *
+	FROM dbo.crimedata_csv_all_years$
+	WHERE HUNDRED_BLOCK IS NOT NULL AND NEIGHBOURHOOD IS NOT NULL AND X IS NOT NULL AND Y IS NOT NULL AND FULL_DATE < '2020-03-18') nonull
+group by NEIGHBOURHOOD
+order by Number_of_Reports desc
+
 --       ############        --
 --         pre-code          --
 --       ############        --
+
+select count(*)
+from
+	(SELECT *
+	FROM dbo.crimedata_csv_all_years$
+	WHERE HUNDRED_BLOCK IS NOT NULL AND NEIGHBOURHOOD IS NOT NULL AND X IS NOT NULL AND Y IS NOT NULL AND FULL_DATE < '2020-03-18') nonull
+
 
 select 
 	TYPE,
