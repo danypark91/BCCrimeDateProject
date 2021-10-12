@@ -191,19 +191,52 @@ select
 	YEAR,
 	MONTH,
 	count(TYPE) as Actual_Incident,
-	round(cast(count(TYPE) as float)/cast(datediff(day, '2020-03-18', '2020-04-01') as float)*31, 2) as Predicted_Incident
+	case
+		when MONTH = 3 then round(cast(count(TYPE) as float)/cast(datediff(day, '2020-03-18', '2020-04-01') as float)*31, 2)
+		when MONTH = 7 then round(cast(count(TYPE) as float)/cast(datediff(day, '2021-07-01', '2021-07-23') as float)*31, 2)
+	end as Predicted_Incident
+	--round(cast(count(TYPE) as float)/cast(datediff(day, '2020-03-18', '2020-04-01') as float)*31, 2) as Predicted_Incident
 from
 	(SELECT *
 	FROM dbo.crimedata_csv_all_years$
-	WHERE HUNDRED_BLOCK IS NOT NULL AND NEIGHBOURHOOD IS NOT NULL AND X IS NOT NULL AND Y IS NOT NULL AND FULL_DATE >= '2020-03-18') nonull_prior
-where TYPE NOT LIKE '%Vehicle%' AND TYPE NOT LIKE '%Bicycle%' AND YEAR(FULL_DATE) = 2020 AND MONTH(FULL_DATE) = 3
+	WHERE HUNDRED_BLOCK IS NOT NULL AND NEIGHBOURHOOD IS NOT NULL AND X IS NOT NULL AND Y IS NOT NULL AND FULL_DATE >= '2020-03-18') nonull_post
+where TYPE NOT LIKE '%Vehicle%' AND TYPE NOT LIKE '%Bicycle%' AND format(FULL_DATE, 'yyyy-MM') = '2020-03' OR format(FULL_DATE, 'yyyy-MM') = '2021-07'
+group by TYPE, YEAR, MONTH
+order by TYPE, YEAR
+
+-- Merge the previous code with the actual count
+-- Similar rule could apply to prior lockdown date: between Mar-1-2020 to Mar-17-2020
+select
+	TYPE,
+	YEAR,
+	MONTH,
+	count(TYPE) as Actual_Total_Incident,
+	case 
+		when YEAR = 2020 AND MONTH = 3 then round(cast(count(TYPE) as float)/cast(datediff(day, '2020-03-18', '2020-04-01') as float)*31, 2)
+		when YEAR = 2021 AND MONTH = 7 then round(cast(count(TYPE) as float)/cast(datediff(day, '2021-07-01', '2021-07-23') as float)*31, 2)
+		else count(TYPE)
+	end as Predicted_Total_Incident
+from
+	(SELECT *
+	FROM dbo.crimedata_csv_all_years$
+	WHERE HUNDRED_BLOCK IS NOT NULL AND NEIGHBOURHOOD IS NOT NULL AND X IS NOT NULL AND Y IS NOT NULL AND FULL_DATE >= '2020-03-18') nonull
 group by TYPE, YEAR, MONTH
 order by TYPE, YEAR, MONTH
-
 
 --       ############        --
 --         pre-code          --
 --       ############        --
+
+select 
+	TYPE,
+	YEAR,
+	MONTH,
+	Count(TYPE)
+from dbo.crimedata_csv_all_years$
+where FULL_DATE >= '2020-03-18' AND YEAR = 2020 AND MONTH = 3
+group by TYPE, YEAR, MONTH
+order by TYPE, YEAR, MONTH
+
 DECLARE @d DATETIME = '2020-03-18 00:00:00';
 SELECT 
    DATEPART(day, @d) day
@@ -215,6 +248,10 @@ order by FULL_DATE
 
 SELECT DATEDIFF(day, '2020-03-18', '2020-04-01') AS DateDif;
 SELECT DATEDIFF(DAY, 2020-18-03, 2020-01-03)      AS 'DateDif'
+SELECT DATEDIFF(DAY, '2021-06-30', '2021-07-23')      AS 'DateDif'
+
+select max(FULL_DATE)
+from dbo.crimedata_csv_all_years$
 
 select
 	count(distinct YEAR)
@@ -235,4 +272,12 @@ from
 
 SELECT MAX(FULL_DATE)
 FROM dbo.crimedata_csv_all_years$
-WHERE X IS NOT NULL AND FULL_DATE <= '2020-03-17'
+WHERE X IS NOT NULL AND FULL_DATE < '2020-03-18'
+
+select count(TYPE)
+	from dbo.crimedata_csv_all_years$ post
+	--where post.INCIDENT_NUMBER = pre.INCIDENT_NUMBER
+	group by NEIGHBOURHOOD, TYPE
+
+select FORMAT(MAX(FULL_DATE), 'yyyy-MM')
+from dbo.crimedata_csv_all_years$
