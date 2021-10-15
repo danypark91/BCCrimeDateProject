@@ -213,13 +213,32 @@ select
 	count(TYPE) as Actual_Total_Incident,
 	case 
 		when YEAR = 2020 AND MONTH = 3 then round(cast(count(TYPE) as float)/cast(datediff(day, '2020-03-18', '2020-04-01') as float)*31, 2)
-		when YEAR = 2021 AND MONTH = 7 then round(cast(count(TYPE) as float)/cast(datediff(day, '2021-07-01', '2021-07-23') as float)*31, 2)
+		when YEAR = 2021 AND MONTH = 7 then round(cast(count(TYPE) as float)/cast(datediff(day, '2021-07-01', '2021-07-24') as float)*31, 2)
 		else count(TYPE)
 	end as Predicted_Total_Incident
 from
 	(SELECT *
 	FROM dbo.crimedata_csv_all_years$
 	WHERE HUNDRED_BLOCK IS NOT NULL AND NEIGHBOURHOOD IS NOT NULL AND X IS NOT NULL AND Y IS NOT NULL AND FULL_DATE >= '2020-03-18') nonull
+group by TYPE, YEAR, MONTH
+order by TYPE, YEAR, MONTH
+
+-- Pre Lockdown
+-- Crime Type: Homicide, Offence against Person and Other Theft
+select
+	TYPE,
+	YEAR,
+	MONTH,
+	count(TYPE) as Actual_Total_Incident,
+	case 
+		when YEAR = 2020 AND MONTH = 3 then round(cast(count(TYPE) as float)/cast(datediff(day, '2020-03-01', '2020-03-18') as float)*31, 2)
+		else count(TYPE)
+	end as Predicted_Total_Incident
+from
+	(SELECT *
+	FROM dbo.crimedata_csv_all_years$
+	WHERE HUNDRED_BLOCK IS NOT NULL AND NEIGHBOURHOOD IS NOT NULL AND X IS NOT NULL AND Y IS NOT NULL AND FULL_DATE < '2020-03-18') nonull_pre
+where TYPE LIKE 'Homicide' OR TYPE LIKE 'Other Theft' OR TYPE LIKE 'Offence Against a Person'
 group by TYPE, YEAR, MONTH
 order by TYPE, YEAR, MONTH
 
